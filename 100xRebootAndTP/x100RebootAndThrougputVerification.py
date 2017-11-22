@@ -27,7 +27,7 @@ LOCAL_PASSWORD = 'HeWGEUx66m=_4!ND'
 REMOTE_SERVER_IP = '192.168.0.203'      #dane do iperfa
 REMOTE_PORT_1 = 5211
 REMOTE_PORT_2 = 5222
-DURATION = 60
+DURATION = 30
 RESULTS_PATH = "/home/airspan/Desktop/PythonResults/ThroughputAfterReboot_results.csv"          #wyniki
 MAIN_LOG_PATH = '/home/airspan/Desktop/PythonResults/MainLog.log'                               #log z wykonywania sie programu
 LOG_PATH = '/home/airspan/Desktop/PythonResults/Log/LogReboot'                                  #log serialowy z FT
