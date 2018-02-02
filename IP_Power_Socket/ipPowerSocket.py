@@ -24,30 +24,30 @@ SNMP_HOST = '10.4.0.36'             #adres IP Power Socket
 
 MAIN_LOG_PATH = '/home/airspan/Desktop/PythonResults/IP_Power_Socket/MainLogIP.log'
 
-TIMEOUT = 180                       #czas testu w sekundach
+TIMEOUT = 500000                      #czas testu w sekundach
 
 #Gniazda ktore beda braly udzial w tescie
 out_inv = { 'out0': True,
             'out1': False,
             'out2': False,
             'out3': False,
-            'out4': True
+            'out4': False
 }
 
 #Czas pracy poszczegolnego gniazda w sekundach
-out_up_time = { 'out0': 40,
-                'out1': 120,
+out_up_time = { 'out0': 3000,
+                'out1': 600,
                 'out2': 180,
                 'out3': 240,
-                'out4': 60
+                'out4': 20
 }
 
 #Czas uspienia/wylaczenia
-out_sleep_time = {'out0': 20,
-                  'out1': 120,
+out_sleep_time = {'out0': 3000,
+                  'out1': 30,
                   'out2': 180,
                   'out3': 240,
-                  'out4': 30
+                  'out4': 200
 }
 
 oid_table = {'out0': '.1.3.6.1.4.1.17095.3.1.0',
@@ -195,4 +195,6 @@ for j in jobs:
     logging.info("Scheduler for %s terminated"%j.name)
     j.terminate()
 
+#wlaczenie wszystkich gniazd
+snmpTurnOnAllOuts()
 

@@ -1,29 +1,45 @@
 import os
 import errno
 import threading
+import serial
+import time
 
 
-MAX_REBOOT_COUNTER = 5
-LOG_PATH = '/home/airspan/Desktop/PythonResults/Log/LogReboot'
 
-#Sprawdzenie czy sciezka istnieje, jesli nie to utworzenie odpowiednich katalogow
-if not os.path.exists(os.path.dirname(LOG_PATH)):
-    try:
-        os.makedirs(os.path.dirname(LOG_PATH))
-    except OSError as exc:  #Guard against race condition
-        if exc.errno != errno.EEXIST:
-            raise
+SERIAL_PORT = '/dev/ttyUSB0'
+SERIAL_BAUDRATE = 115200
 
+
+
+ser =serial.Serial(SERIAL_PORT,SERIAL_BAUDRATE, timeout=0.050)
+
+while 1:
+    while ser.in_waiting:
+        print ser.readline()
+        # time.sleep(1)
+
+
+# MAX_REBOOT_COUNTER = 5
+# LOG_PATH = '/home/airspan/Desktop/PythonResults/Log/LogReboot'
+#
+# #Sprawdzenie czy sciezka istnieje, jesli nie to utworzenie odpowiednich katalogow
+# if not os.path.exists(os.path.dirname(LOG_PATH)):
+#     try:
+#         os.makedirs(os.path.dirname(LOG_PATH))
+#     except OSError as exc:  #Guard against race condition
+#         if exc.errno != errno.EEXIST:
+#             raise
+#
+# # for i in range(MAX_REBOOT_COUNTER):
+# #     file_r = open('%s%i.log'%(LOG_PATH,i+1), "w")  # tworzenie pliku wynikowego
+# #     file_r.write("Reboot Number: %i"%(i+1))
+# #     file_r.close()
+#
+# #to samo co wyzej tylko za pomoca komendy with, dzieki niej nie trzeba zamykac pliku. Komenda zrobi to za nas
 # for i in range(MAX_REBOOT_COUNTER):
-#     file_r = open('%s%i.log'%(LOG_PATH,i+1), "w")  # tworzenie pliku wynikowego
-#     file_r.write("Reboot Number: %i"%(i+1))
-#     file_r.close()
-
-#to samo co wyzej tylko za pomoca komendy with, dzieki niej nie trzeba zamykac pliku. Komenda zrobi to za nas
-for i in range(MAX_REBOOT_COUNTER):
-    file_log_name = '%s%i.log'%(LOG_PATH,i+1)
-    print file_log_name
-    with open (file_log_name,'w') as file_r:
-        file_r.write("Reboot Number: %i" % (i + 1))
-
-def serialToFile
+#     file_log_name = '%s%i.log'%(LOG_PATH,i+1)
+#     print file_log_name
+#     with open (file_log_name,'w') as file_r:
+#         file_r.write("Reboot Number: %i" % (i + 1))
+#
+# def serialToFile
