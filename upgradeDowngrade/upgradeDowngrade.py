@@ -12,7 +12,6 @@ import platform
 from nbi import Argstruct, nbi
 from ConfigParser import ConfigParser
 import timeout
-import csv
 import results
 
 
@@ -82,6 +81,8 @@ def run():
     #update parametrów z netspana
     au.updateNodeInfo(netspan)
     au.updateNodeSoftwareStatus(netspan)
+    logging.info('Node info: %s' % au.node_info)
+    logging.info('Node software status: %s' % au.node_software_status)
 
     #wczytanie commercial images
     commercial_images_dict , commercial_images_list = readSection('from_images_config')
@@ -94,9 +95,20 @@ def run():
 
     #Utworzenie pliku wynikowego
     res_csv = results.Results(readOption('result_path'))
-    myHeaders = ['No','From_iRelay_SW','From_eNB_SW',
-                'To_SW_name','To_iRelay_SW','To_eNB_SW',
-                'Start_Time','Finish_Time','Elapsed_Time','TYPE','STATUS']
+    # print type(au.node_info['HardwareType'])
+    # print au.node_info['HardwareType'][0]
+    if au.node_info['HardwareCategory'][0] == 'AirUnity':
+        myHeaders = ['No','From_iRelay_SW','From_eNB_SW',
+                    'To_SW_name','To_iRelay_SW','To_eNB_SW',
+                    'Start_Time','Finish_Time','Elapsed_Time','TYPE','STATUS']
+    elif au.node_info['HardwareType'][0] == 'iBridge 460' or au.node_info['HardwareType'][0] == 'iRelay 464':
+        myHeaders = ['No', 'From_SW','To_SW_name', 'To_SW',
+                     'Start_Time', 'Finish_Time', 'Elapsed_Time', 'TYPE', 'STATUS']
+    else:
+        logging.error('Unknown HardwareType')
+        exit(1)
+
+
     res_csv.writeHeader(myHeaders)
     #utworzenie slownika ktory bedzie przechowywal tymczasowe wyniki
     result_dict = dict((k, '') for k in myHeaders)
@@ -130,8 +142,14 @@ def upgradeProcedure (node_obj, nbi_obj, img_name, dic_res, res_obj,headrs, type
         node_obj.updateNodeSoftwareStatus(nbi_obj)
         logging.warning('Can not read Running Version from Node. Waiting 5s and try again')
         time.sleep(5)
-    dic_res['From_iRelay_SW'] = node_obj.node_software_status['RunningVersion'][0]
-    dic_res['From_eNB_SW'] = node_obj.node_software_status['RunningVersion'][1]
+    if node_obj.node_info['HardwareCategory'][0] == 'AirUnity':
+        dic_res['From_iRelay_SW'] = node_obj.node_software_status['RunningVersion'][0]
+        dic_res['From_eNB_SW'] = node_obj.node_software_status['RunningVersion'][1]
+    elif node_obj.node_info['HardwareType'][0] == 'iBridge 460' or node_obj.node_info['HardwareType'][0] == 'iRelay 464':
+        dic_res['From_SW'] = node_obj.node_software_status['RunningVersion']
+    else:
+        logging.error('Unknown HardwareType')
+        exit(1)
     # instalacja sw
     node_obj.installSoftware(nbi_obj, img_name)
     start_time = time.time()
@@ -158,8 +176,14 @@ def upgradeProcedure (node_obj, nbi_obj, img_name, dic_res, res_obj,headrs, type
     while not node_obj.node_software_status['RunningVersion']:
         node_obj.updateNodeSoftwareStatus(nbi_obj)
         time.sleep(5)
-    dic_res['To_iRelay_SW'] = node_obj.node_software_status['RunningVersion'][0]
-    dic_res['To_eNB_SW'] = node_obj.node_software_status['RunningVersion'][1]
+    if node_obj.node_info['HardwareCategory'][0] == 'AirUnity':
+        dic_res['To_iRelay_SW'] = node_obj.node_software_status['RunningVersion'][0]
+        dic_res['To_eNB_SW'] = node_obj.node_software_status['RunningVersion'][1]
+    elif node_obj.node_info['HardwareType'][0] == 'iBridge 460' or node_obj.node_info['HardwareType'][0] == 'iRelay 464':
+        dic_res['To_SW'] = node_obj.node_software_status['RunningVersion']
+    else:
+        logging.error('Unknown HardwareType')
+
     return dic_res
     # try:
     #     result_dict['To_iRelay_SW'] = au.node_software_status['RunningVersion'][0]
