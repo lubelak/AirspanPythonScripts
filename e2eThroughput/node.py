@@ -14,6 +14,7 @@ class Node(object):
         logging.info('utworzono obiekt Node z nazwa: %s' % name)
         self.node_software_status = {}
         self.node_info = {}
+        self.provision_info = {}
 
     def updateNodeInfo(self, nbi_obj):
         cliArgs = Argstruct({'values': ['NodeName=' + self.node_name], 'delEmpty': True})
@@ -44,7 +45,13 @@ class Node(object):
                                             'ActualOperationalStatus',
                                             'RequestedOperationalStatus'])
 
-
+    def updateProvisionInfo(self, nbi_obj):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name], 'delEmpty': True})
+        xml = nbi_obj.applyAndPost('Lte', 'RelayEnbConfigGet', cliArgs)
+        self.provision_info = nbi_obj.getFieldList(xml, ['Name',
+                                                         'Hardware',
+                                                         'SystemDefaultProfile'])
+        # print self.provision_info
 
     def updateNodeSoftwareStatus(self, nbi_obj):
         cliArgs = Argstruct({'values': ['NodeName=' + self.node_name,'NodeNameOrId='+self.node_name], 'delEmpty': True})
@@ -88,16 +95,10 @@ class Node(object):
                 # time.sleep(2)
                 # print node_software_status
                 if (len(self.node_software_status['NodeState'])==2 and len(self.node_software_status['NmsState'])==2):
-                    # if self.node_software_status['NodeState'][0] == 'Idle ()' and \
-                    #     self.node_software_status['NodeState'][1] == 'Idle' and \
-                    #     self.node_software_status['NmsState'][0] == 'Idle' and \
-                    #     self.node_software_status['NmsState'][1] == 'Idle':
-                    #     logging.info('Node in idle state')
-                    #     break
-                    if 'Idle' in self.node_software_status['NodeState'][0] and \
-                        'Idle' in self.node_software_status['NodeState'][1] and \
-                        'Idle' in self.node_software_status['NmsState'][0] and \
-                        'Idle' in self.node_software_status['NmsState'][1]:
+                    if self.node_software_status['NodeState'][0] == 'Idle ()' and \
+                        self.node_software_status['NodeState'][1] == 'Idle' and \
+                        self.node_software_status['NmsState'][0] == 'Idle' and \
+                        self.node_software_status['NmsState'][1] == 'Idle':
                         logging.info('Node in idle state')
                         break
                     else:
@@ -174,3 +175,11 @@ class Node(object):
         else:
             logging.error('Unknown HardwareType')
             exit(1)
+
+    def enbRfStatusGet(self,nbi_obj):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name, 'NodeNameOrId=' + self.node_name], 'delEmpty': True})
+        xml = nbi_obj.applyAndPost('Status', 'EnbRfStatusGet', cliArgs)
+        enb_rf_status = nbi_obj.getFieldList(xml, ['OperationalStatus',
+                                                   'ConfiguredTxPowerDbm',
+                                                   'ActualTxPowerDbm'])
+        return enb_rf_status

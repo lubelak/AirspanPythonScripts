@@ -193,7 +193,6 @@ def upgradeProcedure (node_obj, nbi_obj, img_name, dic_res, res_obj,headrs, type
     #     result_dict['To_iRelay_SW'] = ''
     #     result_dict['To_eNB_SW'] = ''
 
-
 def verifyImages(nbi_obj, images_dic, node_info):
     for key in images_dic:
         args = Argstruct({'values': ['Name=' + images_dic[key]], 'delempty': True})
@@ -213,8 +212,6 @@ def verifyImages(nbi_obj, images_dic, node_info):
         else:
             logging.error('SW %s does not exist in Netspan. Please check name or Netspan settings',key )
             exit(1)
-
-
 
 def pingHost(ip):
     oper = platform.system()  # Sprawdzenie z jakim systemem operacyjnym mamy do czynienie

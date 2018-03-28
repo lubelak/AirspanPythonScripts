@@ -22,5 +22,3 @@ class Results(object):
             writer = csv.DictWriter(myFile, fieldnames=header_fields)
             # zapisanie naglowkow do pliku
             writer.writerow(dict_fields)
-
-

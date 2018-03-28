@@ -11,7 +11,7 @@ import platform
 import time
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.proto import rfc1902
-import serial
+import serialHi
 
 #Dane snmp dla listwy zasilającej
 SNMP_PUBLIC_COMMUNITY_POWER_SOCKET = 'public'               #dane do snmp
