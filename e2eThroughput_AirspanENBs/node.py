@@ -50,6 +50,8 @@ class Node(object):
         xml = nbi_obj.applyAndPost('Lte', 'RelayEnbConfigGet', cliArgs)
         self.provision_info = nbi_obj.getFieldList(xml, ['Name',
                                                          'Hardware',
+                                                         'BandwidthMhz',
+                                                         'FrameConfig',
                                                          'SystemDefaultProfile'])
         # print self.provision_info
 
@@ -183,3 +185,60 @@ class Node(object):
                                                    'ConfiguredTxPowerDbm',
                                                    'ActualTxPowerDbm'])
         return enb_rf_status
+
+    def enbConfigGet(self, nbi_obj):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name], 'delEmpty': True})
+        xml = nbi_obj.applyAndPost('Lte', 'EnbConfigGet', cliArgs)
+        enb_config = nbi_obj.getFieldList(xml, ['Name',
+                                                'Hardware',
+                                                'RadioProfile',
+                                                'CellNumber',
+                                                'SystemDefaultProfile'])
+        return enb_config
+
+
+
+    def enbConfigSet(self, nbi_obj, profile_name, cell_number):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name, 'RadioProfile=' + profile_name, 'CellNumber=' + cell_number], 'delEmpty': True, 'delEmptySections': True})
+        xml = nbi_obj.applyAndPost('Lte', 'EnbConfigSet', cliArgs)
+        error = ''.join(nbi_obj.getField(xml, 'ErrorString'))  # po co ten join
+        # logging.info(error)
+        if 'not found' in error:
+            logging.info('Radio Profile ', profile_name, 'not found on Netspan. Exiting.')
+            exit(1)
+
+    def enbStateSet(self, nbi_obj, enb_state):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name, 'EnbState=' + enb_state], 'delEmpty': True, 'delEmptySections': True})
+        # cliArgs = Argstruct({'values': ['NodeName=' + self.node_name, 'CellState=InService', 'CellNumber=1'], 'delEmpty': True, 'delEmptySections': True})
+        # cliArgs = Argstruct({'values': ['NodeName=' + self.node_name,'CellState=<CellState>InService</CellState><CellNumber>1</CellNumber>'], 'delEmpty':True, 'novalues':[
+        #     '/CellState']})
+        #'EnbState=OutOfService',
+        xml = nbi_obj.applyAndPost('Lte', 'EnbStateSet', cliArgs)
+        error = ''.join(nbi_obj.getField(xml, 'ErrorString'))  # po co ten join
+        # logging.info(error)
+        if 'not found' in error:
+            logging.info('Node ', self.node_name, 'not found on Netspan. Exiting.')
+            exit(1)
+
+    def nodeReprovision (self, nbi_obj):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name], 'delEmpty': True})
+        xml = nbi_obj.applyAndPost('Inventory', 'NodeReprovision', cliArgs)
+        error = ''.join(nbi_obj.getField(xml, 'ErrorCode'))  # po co ten join
+        # logging.info(error)
+        if 'OK' in error:
+            logging.info('Node Reprovision OK')
+        else:
+            logging.error('Node Reprovision FAILED')
+            # exit(1)
+
+    def nodeResetForced (self, nbi_obj):
+        cliArgs = Argstruct({'values': ['NodeName=' + self.node_name], 'delEmpty': True})
+        xml = nbi_obj.applyAndPost('Inventory', 'NodeResetForced', cliArgs)
+        error = ''.join(nbi_obj.getField(xml, 'ErrorCode'))  # po co ten join
+        # logging.info(error)
+        if 'OK' in error:
+            logging.info('Node Reset OK')
+        else:
+            logging.error('Node Reset FAILED')
+            # exit(1
+
