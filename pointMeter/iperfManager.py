@@ -5,6 +5,8 @@ from ssh import ssh
 import threading
 import time
 import logging
+import os
+import subprocess, sys
 
 
 class IperfManager():
@@ -205,6 +207,96 @@ def createBandwidthList(theo_rate, start_per = 70, stop_per = 140, step_per = 10
     for i in range(start_per, stop_per + step_per, step_per):
         rate_list.append(round((float(theo_rate) * i / 100), 1))
     return rate_list
+
+# o = os.popen('dir').read()
+# print (o)
+
+################################# Klasy dla pointMeter  #######################
+class IperfLocalClient():
+    def __init__(self, command):
+        self.command = command
+        self.process_1 = None
+
+    def createClient(self):
+        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.process_1.wait()
+
+    #to nie jest potrzebne, po wykonaniu polecenia iperf powłoka się zamyka
+    def killClient(self):
+        self.process_1.kill()
+
+
+
+
+class IperfLocalServer():
+    def __init__(self, command):
+        self.command = command
+        self.process_1 = None
+        self.output = ''
+
+    def createServer(self):
+        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # for line in iter(self.process_1.stdout.readline, b''):
+        #     print(line.rstrip())
+        for line in iter(self.process_1.stdout.readline, b''):
+            self.output += (line.rstrip())
+            print (line.rstrip())
+        # self.process_1.wait()
+
+    def killServer(self):
+        self.process_1.kill()
+
+    def readReport(self):
+        """
+        funkcja która czyta z shella. Od ostatniej linii sprawdza czy jest str [SUM] który świadczy że był to test udp.
+        Jeśli nie ma to sprawdza czy jest info o Mbps- świadczy to o tym ze był to test udp lub tcp z jednym streamem.
+        :return: osiagnieta przepływnośc
+        """
+        report = self.output
+        for line in reversed(report.splitlines()):
+            print line
+            if '[SUM]' in line:
+                logging.info('Line which contains throughput report: %s' % line)
+                line_list = line.split(' ')
+                value_index = None
+                for i, x in enumerate(line_list):
+                    if x == 'Mbits/sec':
+                        value_index = i - 1
+                # print value_index
+                return line_list[value_index]
+            elif 'Mbits/sec' in line:
+                # print line
+                logging.info('Line which contains throughput report: %s' % line)
+                line_list = line.split(' ')
+                value_index = None
+                for i, x in enumerate(line_list):
+                    if x == 'Mbits/sec':
+                        value_index = i - 1
+                # print value_index
+                return line_list[value_index]
+            else:
+                pass
+        # print report
+
+cmd = 'iperf -s -u '
+cmd2 = 'iperf -c10.70.22.101 -t10 -b10M '
+# p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+# print p.stdout.readline()
+# print p.stdout.readline()
+# # p.communicate()[0]
+# # time.sleep(10)
+# print 'czytamy po 10s'
+#
+# for line in iter(p.stdout.readline, b''):
+#     print(line.rstrip())
+
+# client1 = IperfLocalClient(cmd2)
+# client1.createClient()
+server1 = IperfLocalServer(cmd)
+server1.createServer()
+time.sleep(20)
+server1.killServer()
+print server1.readReport()
 
 
 # list_one = [1, 10, 5, 25, 30, 8]
