@@ -7,6 +7,7 @@ import time
 import logging
 import os
 import subprocess, sys
+from subprocess import CREATE_NEW_CONSOLE
 
 
 class IperfManager():
@@ -234,14 +235,22 @@ class IperfLocalServer():
         self.process_1 = None
         self.output = ''
 
-    def createServer(self):
-        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    def createServer(self, time_s):
+        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=CREATE_NEW_CONSOLE)
+        print 'iperf server created'
+        logging.info('Iperf server created')
         # for line in iter(self.process_1.stdout.readline, b''):
         #     print(line.rstrip())
-        for line in iter(self.process_1.stdout.readline, b''):
-            self.output += (line.rstrip())
-            print (line.rstrip())
+        # for line in iter(self.process_1.stdout.readlines(), b''):
+        #     self.output += (line.rstrip())
+        #     print (line.rstrip())
         # self.process_1.wait()
+        print 'waiting 20s'
+        logging.info('Waiting %ss' % time_s)
+        time.sleep(time_s)
+        self.output = self.process_1.stdout.readlines()
+        print 'read lines'
+        print self.output
 
     def killServer(self):
         self.process_1.kill()
@@ -293,9 +302,11 @@ cmd2 = 'iperf -c10.70.22.101 -t10 -b10M '
 # client1 = IperfLocalClient(cmd2)
 # client1.createClient()
 server1 = IperfLocalServer(cmd)
-server1.createServer()
-time.sleep(20)
+server1.createServer(20)
+print 'sleeping 30s'
+time.sleep(30)
 server1.killServer()
+print 'kill iperf server'
 print server1.readReport()
 
 

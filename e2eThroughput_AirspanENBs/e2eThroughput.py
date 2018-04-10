@@ -160,12 +160,15 @@ def run():
         # utworzenie listy wartości sprawdzanych w teście udp, od 70% do 130% ze skokiem 10%
         theo_dl = readOption(profile+'_theo_dl')
         theo_ul = readOption(profile+'_theo_ul')
-        udp_dl_list = createBandwidthList(theo_dl, 70, 130, 5)
-        udp_ul_list = createBandwidthList(theo_ul, 70, 130, 5)
-        # udp_dl_list = createBandwidthList(theo_dl, 90, 130, 5)
-        # udp_ul_list = createBandwidthList(theo_ul, 90, 130, 5)
-        parallel_list = [1, 2, 4, 8, 10, 16, 32]
-        # parallel_list = [1, 2, 4, 6, 8, 10, 12, 16, 20, 32]
+        # udp_dl_list = createBandwidthList(theo_dl, 70, 130, 5)
+        # udp_ul_list = createBandwidthList(theo_ul, 70, 130, 5)
+        # # udp_dl_list = createBandwidthList(theo_dl, 90, 130, 5)
+        # # udp_ul_list = createBandwidthList(theo_ul, 90, 130, 5)
+        # parallel_list = [1, 2, 4, 8, 10, 16, 32]
+        # # parallel_list = [1, 2, 4, 6, 8, 10, 12, 16, 20, 32]
+        udp_dl_list = createBandwidthList(theo_dl, 100, 120, 10)
+        udp_ul_list = createBandwidthList(theo_ul, 100, 120, 10)
+        parallel_list = [1, 2, 4, 8, 16, 32]
 
         # #szybki pomiar
         # udp_dl_list = [100]
@@ -185,14 +188,23 @@ def run():
         # iperf_m = IperfManager(ubuntu_iperf_dict, ue_iperf_dict)
         dl_tcp = iperf_m.performDlTcpTest(parallel_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
         ul_tcp = iperf_m.performUlTcpTest(parallel_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
-        dl_udp = iperf_m.performDlUdpTest(udp_dl_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
-        ul_udp = iperf_m.performUlUdpTest(udp_ul_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
-        logging.info('Relay RESULTS:\nDL TCP: %f\n UL TCP: %f\n DL UDP: %f\n UL UDP: %f\n' % (dl_tcp, ul_tcp, dl_udp, ul_udp))
-        # wczytanie otrzymanych wartosci do slownika wynikowego
-        result_dict['Relay_DL_UDP'] = dl_udp
-        result_dict['Relay_UL_UDP'] = ul_udp
-        result_dict['Relay_DL_TCP'] = dl_tcp
-        result_dict['Relay_UL_TCP'] = ul_tcp
+        # dl_udp = iperf_m.performDlUdpTest(udp_dl_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
+        # ul_udp = iperf_m.performUlUdpTest(udp_ul_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
+
+        dl_udp = iperf_m.performDlUdpTest2(udp_dl_list, parallel_list, time_s, port_nr, add_iperf_parameters_tcp,
+                                           add_iperf_parameters_tcp)
+        ul_udp = iperf_m.performUlUdpTest2(udp_ul_list, parallel_list, time_s, port_nr, add_iperf_parameters_tcp,
+                                           add_iperf_parameters_tcp)
+        try:
+            logging.info('Relay RESULTS:\nDL TCP: %f\n UL TCP: %f\n DL UDP: %f\n UL UDP: %f\n' % (dl_tcp, ul_tcp, dl_udp, ul_udp))
+            # wczytanie otrzymanych wartosci do slownika wynikowego
+            result_dict['Relay_DL_UDP'] = dl_udp
+            result_dict['Relay_UL_UDP'] = ul_udp
+            result_dict['Relay_DL_TCP'] = dl_tcp
+            result_dict['Relay_UL_TCP'] = ul_tcp
+        except:
+            logging.error('Results incomplete')
+
         results_dl_l = []
         results_ul_l = []
         #UDP UL i DL jednocześnie
@@ -220,7 +232,7 @@ def run():
         # else:
         #     logging.info('UE is online, waiting %is to stable connection' % establishment_time)
         #     time.sleep(establishment_time)
-        time.sleep(180)
+        # time.sleep(180)
         # pobranie informacji radiowych z ue
         path = '/home/airspan/kztechScraper_local.py'
         kztech = KztechScraperRemote(ue_iperf_dict, path)
@@ -240,14 +252,21 @@ def run():
         iperf_m_ue = IperfManager(ubuntu_iperf_dict, ue_iperf_dict)
         dl_tcp = iperf_m_ue.performDlTcpTest(parallel_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
         ul_tcp = iperf_m_ue.performUlTcpTest(parallel_list, time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)
-        dl_udp = iperf_m_ue.performDlUdpTest(udp_dl_list, time_s, port_nr, add_iperf_parameters_udp, add_iperf_parameters_udp)
-        ul_udp = iperf_m_ue.performUlUdpTest(udp_ul_list, time_s, port_nr, add_iperf_parameters_udp, add_iperf_parameters_udp)
+        # dl_udp = iperf_m_ue.performDlUdpTest(udp_dl_list, time_s, port_nr, add_iperf_parameters_udp, add_iperf_parameters_udp)
+        # ul_udp = iperf_m_ue.performUlUdpTest(udp_ul_list, time_s, port_nr, add_iperf_parameters_udp, add_iperf_parameters_udp)
+        dl_udp = iperf_m_ue.performDlUdpTest2(udp_dl_list, parallel_list, time_s, port_nr, add_iperf_parameters_udp,
+                                              add_iperf_parameters_udp)
+        ul_udp = iperf_m_ue.performUlUdpTest2(udp_ul_list, parallel_list, time_s, port_nr, add_iperf_parameters_udp,
+                                              add_iperf_parameters_udp)
+        
         logging.info('UE RESULTS:\nDL TCP: %f\n UL TCP: %f\n DL UDP: %f\n UL UDP: %f\n' % (dl_tcp, ul_tcp, dl_udp, ul_udp))
         # wczytanie otrzymanych wartosci do slownika wynikowego
         result_dict['UE_DL_UDP'] = dl_udp
         result_dict['UE_UL_UDP'] = ul_udp
         result_dict['UE_DL_TCP'] = dl_tcp
         result_dict['UE_UL_TCP'] = ul_tcp
+
+
 
 
         #jednoczesny UL i DL dla UE
