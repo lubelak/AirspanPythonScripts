@@ -22,7 +22,8 @@ def readOption(req_opt,is_int = False, path='config.ini'):
         return output
     else:
         logging.error('No such option/section like %s in %s file' % (req_opt, path))
-        exit(1)
+        raise ValueError('No such option')
+        # exit(1)
 
 
 def readSection(req_sec, path='config.ini'):

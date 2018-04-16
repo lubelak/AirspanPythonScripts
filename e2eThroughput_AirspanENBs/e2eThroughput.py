@@ -258,7 +258,7 @@ def run():
                                               add_iperf_parameters_udp)
         ul_udp = iperf_m_ue.performUlUdpTest2(udp_ul_list, parallel_list, time_s, port_nr, add_iperf_parameters_udp,
                                               add_iperf_parameters_udp)
-        
+
         logging.info('UE RESULTS:\nDL TCP: %f\n UL TCP: %f\n DL UDP: %f\n UL UDP: %f\n' % (dl_tcp, ul_tcp, dl_udp, ul_udp))
         # wczytanie otrzymanych wartosci do slownika wynikowego
         result_dict['UE_DL_UDP'] = dl_udp

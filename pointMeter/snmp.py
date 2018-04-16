@@ -5,10 +5,10 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 
 # SNMP_HOST = '192.168.15.1'             #adres lokalny FT, po IPv6 nie mozna bylo pobrac informacji po snmp
-SNMP_HOST = '10.11.40.1'
+# SNMP_HOST = '10.11.40.1'
 
 
-class snmpManager():
+class SnmpManager():
     def __init__(self, host, port=161, community='public'):
         self.host = host
         self.port = port
@@ -34,7 +34,11 @@ class snmpManager():
         self.net_info['RSRQ'] = self.snmpget('1.3.6.1.4.1.17713.20.2.1.2.8.0')
         self.net_info['PCI'] = self.snmpget('1.3.6.1.4.1.17713.20.2.1.2.18.0')
 
+    def getNetInfo(self):
+        self.updateNetInfo()
+        return self.net_info
 
-snmp_m = snmpManager(SNMP_HOST)
-snmp_m.updateNetInfo()
-print snmp_m.net_info
+#
+# snmp_m = snmpManager(SNMP_HOST)
+# snmp_m.updateNetInfo()
+# print snmp_m.net_info

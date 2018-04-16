@@ -11,124 +11,92 @@ from subprocess import CREATE_NEW_CONSOLE
 
 
 class IperfManager():
-    def __init__(self, server_ssh_cred, client_ssh_cred):
+    def __init__(self, server_ssh_cred, ue_ip):
         self.server_ssh_cred = server_ssh_cred
-        self.client_ssh_cred = client_ssh_cred
-        self.stop_event = threading.Event()
+        self.ue_ip = ue_ip
 
-    # dwie pierwsze funkcje dla jednoczesnego DL i UL UDP
-    def performSimDlUdpTest(self, results_dl_l, bandwidth_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        results_dl_l.append(self.performUdpTest(bandwidth_l, True, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters))
+    ######do pointMeter ##########
+    def performSingleDlUdpTest(self, bandwidth, time_sec=60, port_nr=5111, server_add_parameters='',
+                               client_add_parameters=''):
+        server_par = server_add_parameters + ' -u '
+        client_par = client_add_parameters + (' -b%sM ' % bandwidth)
+        return self.performSingleDlTest(time_sec, port_nr, server_par, client_par)
 
-    def performSimUlUdpTest(self, results_ul_l, bandwidth_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        results_ul_l.append(self.performUdpTest(bandwidth_l, False, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters))
+    def performSingleUlUdpTest(self, bandwidth, time_sec=60, port_nr=5111, server_add_parameters='',
+                               client_add_parameters=''):
+        server_par = server_add_parameters + ' -u '
+        client_par = client_add_parameters + (' -b%sM ' % bandwidth)
+        return self.performSingleUlTest(time_sec, port_nr, server_par, client_par)
 
-    def performDlUdpTest(self, bandwidth_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        return self.performUdpTest(bandwidth_l, True, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters)
+    def performSingleDlTcpTest(self, parallel, time_sec=60, port_nr=5111, server_add_parameters='',
+                               client_add_parameters=''):
+        server_par = server_add_parameters
+        client_par = client_add_parameters + (' -P%i ' % parallel)
+        return self.performSingleDlTest(time_sec, port_nr, server_par, client_par)
 
-    def performUlUdpTest(self, bandwidth_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        return self.performUdpTest(bandwidth_l, False, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters)
+    def performSingleUlTcpTest(self, parallel, time_sec=60, port_nr=5111, server_add_parameters='',
+                               client_add_parameters=''):
+        server_par = server_add_parameters
+        client_par = client_add_parameters + (' -P%i ' % parallel)
+        return self.performSingleUlTest(time_sec, port_nr, server_par, client_par)
 
-    def performDlTcpTest(self, parallel_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        return self.performTcpTest(parallel_l, True, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters)
-
-    def performUlTcpTest(self, parallel_l, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        return self.performTcpTest(parallel_l, False, time_sec, port_nr, server_add_parameters,
-                       client_add_parameters)
-
-    def performUdpTest(self, bandwidth_l, reverse=False, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        if reverse:
-            server_cred_tmp = self.client_ssh_cred
-            client_cred_tmp = self.server_ssh_cred
-        else:
-            server_cred_tmp = self.server_ssh_cred
-            client_cred_tmp = self.client_ssh_cred
-
-        #pętla sprawdzająca TP udp
-        result_list = []
-        for bandwidth in bandwidth_l:
-            #po to jest ten server adres bo do ip wykorzystujemy adres lokalny a wysyłamy ruch na adres wan/lte
-            client_command = 'iperf ' + (' -c %s ' % server_cred_tmp['iperf_ip']) + (' -b%fM ' % bandwidth) + \
+    def performSingleDlTest(self, time_sec=60, port_nr=5111, server_add_parameters='',
+                            client_add_parameters=''):
+            client_command = 'iperf ' + (' -c %s ' % self.ue_ip) + \
                              (' -t%i ' % time_sec) + client_add_parameters + (' -p%i ' % port_nr)
-            server_command = 'iperf -s -u -f m ' + (' -p%i ' % port_nr) + server_add_parameters
-            logging.info('Client command: %s' % client_command)
-            logging.info('Server command: %s' % server_command)
-            server_host =IperfServer(server_cred_tmp, server_command)
-            server_host.createServer()
-            logging.info('Iperf server is running with command: %s' % server_command)
-            time.sleep(1)
-
-            client_host = IperfClient(client_cred_tmp, client_command)
-            client_host.createClient()
-            logging.info('Client is running with command: %s' % client_command)
-            # oczekiwanie na zakończenie testu +10s
-            time.sleep(time_sec + 10)
-            client_host.killClient()
-            result = server_host.readReport()
-            try:
-                result_list.append(float(result))
-                logging.info('Proper iperf report from server')
-            except TypeError:
-                logging.error('Improper report from iperf server. Time sleep 60s')
-                # time.sleep(60)
-            logging.info('Temporary list of results: %s' % (';'.join(map(str, result_list))))
-            server_host.killServer()
-
-        result_list.sort()
-        logging.info('Final list of results: %s' % ('; '.join(map(str, result_list))))
-        try:
-            return result_list[-1]
-        except IndexError:
-            return 0.0
-
-    def performTcpTest(self, parallel_l, reverse=False, time_sec=60, port_nr=5111, server_add_parameters='', client_add_parameters=''):
-        if reverse:
-            server_cred_tmp = self.client_ssh_cred
-            client_cred_tmp = self.server_ssh_cred
-        else:
-            server_cred_tmp = self.server_ssh_cred
-            client_cred_tmp = self.client_ssh_cred
-        result_list = []
-        for parallel in parallel_l:
-            # po to jest ten server adres bo do ip wykorzystujemy adres lokalny a wysyłamy ruch na adres wan/lte
-            client_command = 'iperf ' + (' -c %s ' % server_cred_tmp['iperf_ip']) + (' -P%i ' % parallel) + \
-                             (' -t%i ' % time_sec) + (' -p%i ' % port_nr) + client_add_parameters
             server_command = 'iperf -s -f m ' + (' -p%i ' % port_nr) + server_add_parameters
             logging.info('Client command: %s' % client_command)
             logging.info('Server command: %s' % server_command)
-            server_host = IperfServer(server_cred_tmp, server_command)
-            server_host.createServer()
-            logging.info('Iperf server is running with command: %s' % server_command)
+            # utworzenie serwera iperf
+            local_server = IperfLocalServer(server_command)
+            local_server.createServer()
+            # event ktory konczy dodatkowy watek
+            stop_thread = threading.Event()
+            t1 = threading.Thread(target=local_server.readBuffer, args=(stop_thread,)).start()
+            logging.info('DL local iperf server has been created')
             time.sleep(1)
-
-            client_host = IperfClient(client_cred_tmp, client_command)
-            client_host.createClient()
+            # utworzenie clienta iperf
+            remote_client = IperfClient(self.server_ssh_cred, client_command)
+            remote_client.createClient()
             logging.info('Client is running with command: %s' % client_command)
-            #oczekiwanie na zakończenie testu +10s
-            time.sleep(time_sec + 10)
+            # oczekiwanie na zakończenie testu +10s
             logging.info('Waiting for end of iperf test')
-            client_host.killClient()
-            result = server_host.readReport()
-            try:
-                result_list.append(float(result))
-                logging.info('Proper report from iperf server')
-            except TypeError:
-                logging.error('Improper report from iperf server. Time sleep 60s')
-                time.sleep(60)
-            logging.info('Temporary list of results: %s' % (';'.join(map(str, result_list))))
-            server_host.killServer()
+            time.sleep(time_sec + 10)
+            remote_client.killClient()
 
-        result_list.sort()
-        logging.info('Final list of results: %s' % ('; '.join(map(str, result_list))))
-        try:
-            return result_list[-1]
-        except IndexError:
-            return 0.0
+            # odczyt wyników
+            stop_thread.set()
+            time.sleep(1)
+            local_server.killServer()
+            time.sleep(1)
+            logging.info('Local iperf server has been killed')
+            result = local_server.readReport()
+            return result
+    def performSingleUlTest(self, time_sec=60, port_nr=5111, server_add_parameters='',
+                               client_add_parameters=''):
+            client_command = 'iperf ' + (' -c %s ' % self.server_ssh_cred['iperf_ip']) + \
+                             (' -t%i ' % time_sec) + client_add_parameters + (' -p%i ' % port_nr)
+            server_command = 'iperf -s -f m ' + (' -p%i ' % port_nr) + server_add_parameters
+            logging.info('Client command: %s' % client_command)
+            logging.info('Server command: %s' % server_command)
+            # utworzenie serwera iperf
+            remote_server = IperfServer(self.server_ssh_cred, server_command)
+            remote_server.createServer()
+            logging.info('Remote iperf server is running with command: %s' % server_command)
+            time.sleep(1)
+            # utworzenie clienta iperf
+            local_client = IperfLocalClient(client_command)
+            local_client.createClient()
+            logging.info('Local iperf client has been created')
+            time.sleep(1)
+            logging.info('Waiting for end of iperf test')
+            time.sleep(time_sec + 10)
+            local_client.killClient()
+
+            result = remote_server.readReport()
+            remote_server.killServer()
+            return result
+
 
 
 class IperfObject():
@@ -209,8 +177,6 @@ def createBandwidthList(theo_rate, start_per = 70, stop_per = 140, step_per = 10
         rate_list.append(round((float(theo_rate) * i / 100), 1))
     return rate_list
 
-# o = os.popen('dir').read()
-# print (o)
 
 ################################# Klasy dla pointMeter  #######################
 class IperfLocalClient():
@@ -220,7 +186,7 @@ class IperfLocalClient():
 
     def createClient(self):
         self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        self.process_1.wait()
+        # self.process_1.wait()
 
     #to nie jest potrzebne, po wykonaniu polecenia iperf powłoka się zamyka
     def killClient(self):
@@ -231,26 +197,29 @@ class IperfLocalClient():
 
 class IperfLocalServer():
     def __init__(self, command):
+        # super(IperfLocalServer, self).__init__()
         self.command = command
         self.process_1 = None
         self.output = ''
 
-    def createServer(self, time_s):
-        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=CREATE_NEW_CONSOLE)
-        print 'iperf server created'
+
+    def createServer(self):
+        self.process_1 = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # self.process_1.communicate()
+        # print 'iperf server created'
         logging.info('Iperf server created')
+
+    def readBuffer(self, stop_event):
+        self.output = ''
         # for line in iter(self.process_1.stdout.readline, b''):
         #     print(line.rstrip())
-        # for line in iter(self.process_1.stdout.readlines(), b''):
-        #     self.output += (line.rstrip())
-        #     print (line.rstrip())
-        # self.process_1.wait()
-        print 'waiting 20s'
-        logging.info('Waiting %ss' % time_s)
-        time.sleep(time_s)
-        self.output = self.process_1.stdout.readlines()
-        print 'read lines'
-        print self.output
+        while not stop_event.is_set():
+            line = self.process_1.stdout.readline()
+            self.output += line
+            # print line
+        else:
+            logging.info('end of thread')
+
 
     def killServer(self):
         self.process_1.kill()
@@ -262,8 +231,9 @@ class IperfLocalServer():
         :return: osiagnieta przepływnośc
         """
         report = self.output
+        # print report
         for line in reversed(report.splitlines()):
-            print line
+            # print line
             if '[SUM]' in line:
                 logging.info('Line which contains throughput report: %s' % line)
                 line_list = line.split(' ')
@@ -287,27 +257,39 @@ class IperfLocalServer():
                 pass
         # print report
 
-cmd = 'iperf -s -u '
-cmd2 = 'iperf -c10.70.22.101 -t10 -b10M '
-# p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-# print p.stdout.readline()
-# print p.stdout.readline()
-# # p.communicate()[0]
-# # time.sleep(10)
-# print 'czytamy po 10s'
+# cmd = 'iperf -s -u -p5111 '
+# cmd2 = 'iperf -c10.70.22.101 -t10 -b10M '
+# # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+# # print p.stdout.readline()
+# # print p.stdout.readline()
+# # # p.communicate()[0]
+# # # time.sleep(10)
+# # print 'czytamy po 10s'
+# #
+# # for line in iter(p.stdout.readline, b''):
+# #     print(line.rstrip())
 #
-# for line in iter(p.stdout.readline, b''):
-#     print(line.rstrip())
-
-# client1 = IperfLocalClient(cmd2)
-# client1.createClient()
-server1 = IperfLocalServer(cmd)
-server1.createServer(20)
-print 'sleeping 30s'
-time.sleep(30)
-server1.killServer()
-print 'kill iperf server'
-print server1.readReport()
+# # client1 = IperfLocalClient(cmd2)
+# # client1.createClient()
+# server1 = IperfLocalServer(cmd)
+# server1.createServer()
+# # thread = threading.Thread(target=constReadSerialToFile, args=(stop_thread, i)).start()
+# stop_thread = threading.Event()
+# t1 = threading.Thread(target=server1.readBuffer, args=(stop_thread, )).start()
+# # t1.daemon = True
+# # t1.start()
+# # t1.join()
+# print 'sleeping 30s'
+# time.sleep(30)
+#
+# stop_thread.set()
+#
+# time.sleep(2)
+#
+# server1.killServer()
+# time.sleep(1)
+# print 'kill iperf server'
+# print server1.readReport()
 
 
 # list_one = [1, 10, 5, 25, 30, 8]

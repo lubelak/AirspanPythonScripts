@@ -62,8 +62,8 @@ class GpsManager():
     def disconnect(self):
         self.ser.close()
 
-gps = GpsManager()
-gps.connect('COM12')
-print gps.getCoordinates()
-gps.disconnect()
+# gps = GpsManager()
+# gps.connect('COM12')
+# print gps.getCoordinates()
+# gps.disconnect()
 
