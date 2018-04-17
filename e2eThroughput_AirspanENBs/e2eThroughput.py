@@ -166,8 +166,8 @@ def run():
         # # udp_ul_list = createBandwidthList(theo_ul, 90, 130, 5)
         # parallel_list = [1, 2, 4, 8, 10, 16, 32]
         # # parallel_list = [1, 2, 4, 6, 8, 10, 12, 16, 20, 32]
-        udp_dl_list = createBandwidthList(theo_dl, 100, 120, 10)
-        udp_ul_list = createBandwidthList(theo_ul, 100, 120, 10)
+        udp_dl_list = createBandwidthList(theo_dl, 90, 120, 10)
+        udp_ul_list = createBandwidthList(theo_ul, 90, 120, 10)
         parallel_list = [1, 2, 4, 8, 16, 32]
 
         # #szybki pomiar
@@ -214,7 +214,7 @@ def run():
                 results_dl_l,[x], time_s, port_nr, add_iperf_parameters_tcp, add_iperf_parameters_tcp)).start()
             thread2 = threading.Thread(target=iperf_m.performSimUlUdpTest, args=(
                 results_ul_l, [y], time_s, port_nr + 1, add_iperf_parameters_tcp, add_iperf_parameters_tcp)).start()
-            time.sleep(time_s + 20)
+            time.sleep(time_s + 30)
             logging.info(results_dl_l)
             logging.info(results_ul_l)
 
@@ -279,7 +279,7 @@ def run():
                 results_dl_l,[x], time_s, port_nr, add_iperf_parameters_udp, add_iperf_parameters_udp)).start()
             thread2 = threading.Thread(target=iperf_m_ue.performSimUlUdpTest, args=(
                 results_ul_l, [y], time_s, port_nr + 1, add_iperf_parameters_udp, add_iperf_parameters_udp)).start()
-            time.sleep(time_s + 20)
+            time.sleep(time_s + 30)
             logging.info(results_dl_l)
             logging.info(results_ul_l)
 
