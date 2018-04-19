@@ -107,7 +107,7 @@ def clearAndWaitToAttach(mme_ssh_obj, user_dict, result_dict, clear_type):
     if 'apn' in clear_type:
         apn_nr = clear_type[:4].lower()
         apn_ip = user_dict[apn_nr + '_ip']
-        clear_time = clearApn(mme_ssh_obj, user_dict['imsi'], user_dict[apn_nr])
+        clear_time = clearApn(mme_ssh_obj, user_dict['username'], user_dict[apn_nr])
     elif clear_type == 'subscriber':
         clear_time = clearSubscriber(mme_ssh_obj, user_dict['imsi'])
         waitForAllApn(mme_ssh_obj, user_dict)
@@ -147,7 +147,7 @@ def userDictParser(user_dict):
     return ordered_apn_dict, ordered_ip_dict
 
 def waitForAllApn(mme_ssh_obj, user_dict):
-    ue_imsi = user_dict['imsi']
+    ue_username = user_dict['username']
     ordered_apn_dict, ordered_ip_dict = userDictParser(user_dict)
     # liczba zdefiniowanych apnów w pliku ini
     apn_amount = len(ordered_apn_dict)
@@ -158,15 +158,15 @@ def waitForAllApn(mme_ssh_obj, user_dict):
         for k in ordered_apn_dict:
             apn_name = ordered_apn_dict[k]
             apn_ip = ordered_ip_dict[k + '_ip']
-            if  verifyApnStatus(mme_ssh_obj, ue_imsi, apn_name, apn_ip):
+            if  verifyApnStatus(mme_ssh_obj, ue_username, apn_name, apn_ip):
                 success_count += 1
         logging.info('Success count: %i' % success_count)
     else:
         a_time = time.time()
         return a_time
 
-def isSubscriberInMme(mme_ssh_obj, ue_imsi, apn_name):
-    username = ue_imsi + '@' + apn_name
+def isSubscriberInMme(mme_ssh_obj, ue_username, apn_name):
+    username = ue_username + '@' + apn_name
     mme_ssh_obj.sendShell("show subscribers username %s" % username)
     time.sleep(0.5)
     output = mme_ssh_obj.readShell()
@@ -177,15 +177,15 @@ def isSubscriberInMme(mme_ssh_obj, ue_imsi, apn_name):
         logging.error('User %s not found in MME' % username)
         return False
 
-def verifyApnStatus(mme_ssh_obj, ue_imsi, apn_name, apn_ip):
-    if isSubscriberInMme(mme_ssh_obj, ue_imsi, apn_name) and pingHost(apn_ip):
+def verifyApnStatus(mme_ssh_obj, ue_username, apn_name, apn_ip):
+    if isSubscriberInMme(mme_ssh_obj, ue_username, apn_name) and pingHost(apn_ip):
         logging.info('APN %s reattached' % apn_name)
         return True
     else:
         logging.info('APN %s not reattach' % apn_name)
         return False
 
-def verifyInitialApnStatus(mme_ssh_obj, ue_imsi, apn_name, apn_ip):
+def verifyInitialApnStatus(mme_ssh_obj, ue_username, apn_name, apn_ip):
     # apn_nr = clear_type[:4].lower()
     # apn_ip = ue_dict[apn_nr + '_ip']
     if pingHost(apn_ip):
@@ -193,7 +193,7 @@ def verifyInitialApnStatus(mme_ssh_obj, ue_imsi, apn_name, apn_ip):
     else:
         logging.error('No response from APN %s : %s' % (apn_name, apn_ip))
         exit(1)
-    username = ue_imsi + '@' + apn_name
+    username = ue_username + '@' + apn_name
     mme_ssh_obj.sendShell("show subscribers username %s" % username)
     time.sleep(1)
     output = mme_ssh_obj.readShell()
@@ -206,16 +206,16 @@ def verifyInitialStatus(mme_ssh_obj, clear_type, ue_dict):
     if 'apn' in clear_type:
         apn_nr = clear_type[:4].lower()
         apn_ip = ue_dict[apn_nr+'_ip']
-        verifyInitialApnStatus(mme_ssh_obj, ue_dict['imsi'], ue_dict[apn_nr], apn_ip)
+        verifyInitialApnStatus(mme_ssh_obj, ue_dict['username'], ue_dict[apn_nr], apn_ip)
     else:
         for key in ue_dict:
             if 'ip' in key:
                 apn_ip = ue_dict[key]
                 apn_nr = key[:4]
-                verifyInitialApnStatus(mme_ssh_obj, ue_dict['imsi'], ue_dict[apn_nr], apn_ip)
+                verifyInitialApnStatus(mme_ssh_obj, ue_dict['username'], ue_dict[apn_nr], apn_ip)
 
-def clearApn(mme_ssh_obj, ue_imsi, apn_name):
-    username = ue_imsi + '@' + apn_name
+def clearApn(mme_ssh_obj, ue_username, apn_name):
+    username = ue_username + '@' + apn_name
     mme_ssh_obj.sendShell("clear subscribers username %s" % username)
     time.sleep(0.5)
     mme_ssh_obj.sendShell("yes")

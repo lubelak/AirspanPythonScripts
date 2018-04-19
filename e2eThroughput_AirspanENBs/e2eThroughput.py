@@ -175,6 +175,8 @@ def run():
         # udp_ul_list = [10]
         # parallel_list = [8, 16]
 
+
+
         logging.info('List of dl udp bandwidth: %s' % (';'.join(map(str, udp_dl_list))))
         logging.info('List of ul udp bandwidth: %s' % (';'.join(map(str, udp_ul_list))))
         logging.info('List of tcp parallel nr threads: %s' % (';'.join(map(str, parallel_list))))
